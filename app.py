@@ -70,7 +70,7 @@ with col1:
     """)
 
 linkedin_url = "https://www.linkedin.com/in/oestbye/"
-github_url = "https://www.linkedin.com/in/oestbye/"
+github_url = "https://github.com/oestbye/Cyberstats"
 
 with col2:
     st.image(profile_image, use_column_width=True)
