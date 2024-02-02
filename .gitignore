@@ -1,0 +1,5 @@
+.streamlit/
+.venv/
+secrets.toml
+**/.DS_Store
+service-account.json
