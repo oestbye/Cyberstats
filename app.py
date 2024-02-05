@@ -9,7 +9,7 @@ from io import BytesIO
 from google.oauth2 import service_account
 import numpy as np
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 # Set page configuration and title
 st.set_page_config(
@@ -88,29 +88,25 @@ def debug_print(message):
     if DEBUG_MODE:
         print(message)
 
-# Function to get financial data from the BRREG API with debug statements
+# Function to get financial data from the BRREG API
 def get_financial_data(org_number):
     url = f"https://data.brreg.no/regnskapsregisteret/regnskap/{org_number}?regnskapstype=SELSKAP"
     try:
-        if DEBUG_MODE:
-            print(f"Fetching data for org number: {org_number} from URL: {url}")
+        debug_print(f"Fetching data for org number: {org_number} from URL: {url}")
         response = requests.get(url)
         response.raise_for_status()  # Raises an HTTPError if the response status is 4xx or 5xx
         data = response.json()
-        if DEBUG_MODE:
-            print(f"Data fetched successfully for org number: {org_number}")
+        debug_print(f"Data fetched successfully for org number: {org_number}")
         return data
     except requests.exceptions.HTTPError as e:
         error_message = f"Error fetching data for org number {org_number}: {e}"
         if response.status_code == 404:
-            error_message = f"No data available for org number {org_number}. This may be because the company is new and/or data is not yet available."
-        if DEBUG_MODE:
-            print(error_message)
+            error_message += " This may be because the company is new and/or data is not yet available."
+        debug_print(error_message)
         return None
     except requests.RequestException as e:
         error_message = f"Error fetching data for org number {org_number}: {e}"
-        if DEBUG_MODE:
-            print(error_message)
+        debug_print(error_message)
         return None
 
 
@@ -136,11 +132,9 @@ def convert_columns_to_float(df):
                 .replace('', np.nan)  # Replace empty strings with NaN
                 .astype(float, errors='ignore')  # Attempt to convert to float, ignore errors if conversion fails
             )
-            # Explicitly infer object types; helps with future-proofing for pandas changes
             df[column] = df[column].infer_objects()
         except Exception as e:
-            if DEBUG_MODE:
-                print(f"Error processing column '{column}': {e}")
+            debug_print(f"Error processing column '{column}': {e}")
     return df
 
 
@@ -218,31 +212,14 @@ def sanitize_number(number_str):
 
 
 
-def get_current_values_from_sheet(worksheet, org_number, year, debug_mode=True):
+def get_current_values_from_sheet(worksheet, org_number, year):
     try:
         sh = gc.open("stats.xlsx")
         worksheet = sh.sheet1
-        if debug_mode:
-            print("Debug mode: True")
-            # Retrieve and print all data from the worksheet, limited to the first 30 rows and columns
-            all_data = worksheet.get_all_values()
-            print("First 30 rows and columns:")
-            for row_index, row in enumerate(all_data[:30]):
-                print(f"Row {row_index + 1}: {row[:30]}")
-
-            # Print column headers, limited to the first 30 columns
-            column_headers = all_data[0][:30]
-            print("First 30 column headers:")
-            for header in column_headers:
-                print(f"Header: {header}")
-
-        # Find all occurrences of the org_number in the worksheet
         cells = worksheet.find(str(org_number))
         if cells:
-            debug_print(f"Retrieving current values for org number: {org_number}, year: {year}")
             org_cell = cells[0]
             row_number = org_cell.row
-            debug_print(f"Row number found: {row_number}")
 
             income_col_cells = worksheet.find(f"Income {year}")
             result_col_cells = worksheet.find(f"Result {year}")
@@ -255,14 +232,14 @@ def get_current_values_from_sheet(worksheet, org_number, year, debug_mode=True):
                 current_income = worksheet.cell((row_number, income_col_number)).value
                 debug_print(f"Current income from sheet: {current_income}")
             else:
-                debug_print("Income column for year {year} not found.")
+                debug_print(f"Income column for year {year} not found.")
 
             if result_col_cells:
                 result_col_number = result_col_cells[0].col
                 current_result = worksheet.cell((row_number, result_col_number)).value
                 debug_print(f"Current result from sheet: {current_result}")
             else:
-                debug_print("Result column for year {year} not found.")
+                debug_print(f"Result column for year {year} not found.")
 
             return sanitize_number(current_income), sanitize_number(current_result)
         else:
@@ -369,19 +346,13 @@ gc = pygsheets.authorize(custom_credentials=credentials)
 
 try:
     # Attempt to open the spreadsheet
-    if DEBUG_MODE:
-        print("Attempting to open the spreadsheet 'stats.xlsx'")
+    debug_print("Attempting to open the spreadsheet 'stats.xlsx'")
     sh = gc.open("stats.xlsx")
     worksheet = sh.sheet1
-    if DEBUG_MODE:
-        print("Spreadsheet 'stats.xlsx' opened successfully")
+    debug_print("Spreadsheet 'stats.xlsx' opened successfully")
 except Exception as e:
     error_message = f"Error while accessing spreadsheet: {e}"
-    if DEBUG_MODE:
-        print(error_message)
-    else:
-        # Optionally, you can log the error or handle it differently when not in debug mode
-        pass
+    debug_print(error_message)
 
 
 def get_and_update_last_updated_time():
