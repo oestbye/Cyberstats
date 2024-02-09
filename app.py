@@ -713,7 +713,7 @@ with col2:
 
 st.markdown("""
 #### Market Share Distribution per year
-The charts below clearly show that Mnemonic holds the largest market share, followed by Netsecurity and Orange Cyber Defense.
+The charts below clearly show that Mnemonic holds the largest market share, followed by Netsecurity (Netsecurity and Data equipment merged in 2023) and Orange Cyber Defense.
 I calculate the market share by dividing each company's income by the total market income.
 """)
 
