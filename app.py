@@ -890,32 +890,43 @@ profit_margin_df = df[df[profit_margin_col].notna() & (df[profit_margin_col] != 
 # Sort the DataFrame based on 'Profit margin 2022' for better visualization
 profit_margin_df = profit_margin_df.sort_values(by=profit_margin_col, ascending=False)
 
-# Create a horizontal bar chart for profit margin per company in 2022 with the bars going from left to right
+
+# Create the figure with Plotly Express for a vertical bar chart
 fig_profit_margin = px.bar(
     profit_margin_df,
     x='Company Name',
     y=profit_margin_col,
-    orientation='v',  # 'v' for vertical bars
     title=None,
     height=600
 )
 
 # Update layout to match the market trend graph
 fig_profit_margin.update_layout(
-    xaxis_title='Company Name',
     yaxis_title='Profit Margin (%)',
-    yaxis=dict(tickformat='.2%'),  # Format ticks as percentages with two decimal places
-    hovermode='x',  # Change hover mode to x-axis for vertical chart
-    dragmode=False
+    xaxis_title='Company',
+    yaxis=dict(
+        tickformat='.0%',  # Format ticks without decimals
+        range=[-1, max(df[profit_margin_col])*1.2]  # Extend the range to 120% of the max value for better readability
+    ),
+    hovermode='x',
+    dragmode=False,
 )
 
-# Add hover data for precise values
+# Calculate the percentage values for the text, ensuring no decimals and multiplying by 100
+profit_margin_text = (profit_margin_df[profit_margin_col] * 100).round().astype(int).astype(str) + '%'
+
+# Update traces to display the text within the bars, ensuring it's at the start (bottom)
 fig_profit_margin.update_traces(
-    hovertemplate='%{x}: %{y:.2%}<extra></extra>',  # Format hover text as percentages
-    textposition='inside'  # Position the text inside the bars
+    text=profit_margin_text,  # Set the calculated text values
+    textposition='inside',  # Position the text inside the bars
+    insidetextanchor='start',  # Anchor the text to the start of the bar
+    textfont=dict(
+        size=12,  # Set a fixed size for the text
+        color='black'  # Set the text color to white for visibility
+    )
 )
 
-# Display the figure in the Streamlit app
+# Display the updated figure in the Streamlit app
 st.plotly_chart(fig_profit_margin, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
 
