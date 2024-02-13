@@ -11,6 +11,11 @@ import numpy as np
 
 DEBUG_MODE = False
 
+# Function to print debug statements
+def debug_print(message):
+    if DEBUG_MODE:
+        print(message)
+
 # Set page configuration and title
 st.set_page_config(
     page_title="Cyber Security Market Analysis, Norway",
@@ -18,21 +23,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-
-# Define function to get image from Google Drive
-def get_image(file_id):
-    url = f'https://drive.google.com/uc?id={file_id}'
-    response = requests.get(url)
-    img = Image.open(BytesIO(response.content))
-    return img
-
-
-# File ID of the image on Google Drive
-file_id = '1E7pe1PZcJoS877fb5PNgPdbo_PB9ZoZB'
-
-# Use the function to get the image and store it in a variable
-profile_image = get_image(file_id)
 
 short_bio = """
     I embarked on this project to enhance my coding skills and due to my fascination 
@@ -71,9 +61,10 @@ with col1:
 
 linkedin_url = "https://www.linkedin.com/in/oestbye/"
 github_url = "https://github.com/oestbye/Cyberstats"
+image_url = 'https://iili.io/J1miME7.png'
 
 with col2:
-    st.image(profile_image, use_column_width=True)
+    st.image(image_url, caption='', use_column_width=True)
     st.header("Olav Østbye")
     st.write("Principal Cloud Security Manager @ O3C")
     st.caption(short_bio)
@@ -82,11 +73,6 @@ with col2:
     st.link_button("GitHub", url=github_url)
 
 st.markdown("---")
-
-# Function to print debug statements
-def debug_print(message):
-    if DEBUG_MODE:
-        print(message)
 
 # Function to get financial data from the BRREG API
 def get_financial_data(org_number):
