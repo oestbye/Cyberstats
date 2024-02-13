@@ -4,8 +4,6 @@ import plotly.express as px
 import requests
 from datetime import datetime, timedelta
 import pygsheets
-from PIL import Image
-from io import BytesIO
 from google.oauth2 import service_account
 import numpy as np
 
