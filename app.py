@@ -49,8 +49,7 @@ with col1:
     """)
     st.header("Technology and Data Fetching")
     st.markdown("""
-        Data is fetched from the Brønnøysundregisteret API. The free version of the API provides only the latest year's data and has a delay.
-        This means that while you might find the financial numbers for these companies on proff.no, they may not be available here yet.
+        Data is fetched from the Brønnøysundregisteret API and my experience so far is that the data is available short time after the financial statements are approved by the accounting register, and is usually published here 1 day before proff.no
         To trigger a data fetch from the API, please navigate to the bottom of the page and click the "check for new data" button. A function will then run to check if there is any new data available in the API.
         The technology I've used to build this web application includes Streamlit, Pandas, Plotly Express, and Google Sheets. Everything is written in Python.
         The Python code is open-sourced if you're curious and wish to take a look. Please remember that it was not written by a professional developer and will not be maintained.
