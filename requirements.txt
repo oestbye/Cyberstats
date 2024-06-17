@@ -54,6 +54,6 @@ typing_extensions==4.9.0
 tzdata==2023.4
 tzlocal==5.2
 uritemplate==4.1.1
-urllib3==2.2.0
+urllib3==2.2.2
 validators==0.22.0
 zipp==3.17.0
