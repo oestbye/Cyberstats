@@ -51,7 +51,6 @@ rsa==4.9
 six==1.16.0
 smmap==5.0.1
 streamlit==1.36.0
-streamlit-aggrid==1.0.5
 streamlit-option-menu==0.3.13
 tenacity==8.4.2
 toml==0.10.2
