@@ -55,6 +55,12 @@ with col1:
         The Python code is open-sourced if you're curious and wish to take a look. Please remember that it was not written by a professional developer and will not be maintained.
         The primary reason for sharing is to lower the threshold for open-sourcing code, even among those who do not pursue this as a profession.
     """)
+    st.header("Looking for Cyber Security Consultancy, Services, or Software?")
+    st.markdown("""
+        At the bottom of this page, you'll find a comprehensive table listing companies that meet the specified criteria. 
+        This table includes information about the services they offer, helping you to find the right company for your cyber security needs.
+    """)
+
 
 linkedin_url = "https://www.linkedin.com/in/oestbye/"
 github_url = "https://github.com/oestbye/Cyberstats"
@@ -492,32 +498,22 @@ try:
 except Exception as e:
     st.error(f"Error fetching data: {e}")
 
-# Function to format numbers with spaces as thousand separators
-def format_with_thousand_separator(value):
-    if pd.notnull(value):
-        return f"{value:,.0f}".replace(",", " ")
-    return value
-
-# Apply the formatting function to the relevant columns
-for col in ['Income 2023', 'Result 2023', 'Income 2022', 'Result 2022', 'Income 2021', 'Result 2021', 'Income 2020', 'Result 2020']:
-    df[col] = df[col].apply(format_with_thousand_separator)
-
 # Column configurations with appropriate formats
 column_configurations = {
-    "Income 2023": st.column_config.TextColumn("Income 2023"),
-    "Result 2023": st.column_config.TextColumn("Result 2023"),
+    "Income 2023": st.column_config.NumberColumn("Income 2023"),
+    "Result 2023": st.column_config.NumberColumn("Result 2023"),
     "Profit margin 2023": st.column_config.NumberColumn("Profit Margin 2023", format="%.2f%%"),
     "Market share 2023": st.column_config.NumberColumn("Market share 2023", format="%.2f%%"),
-    "Income 2022": st.column_config.TextColumn("Income 2022"),
-    "Result 2022": st.column_config.TextColumn("Result 2022"),
+    "Income 2022": st.column_config.NumberColumn("Income 2022"),
+    "Result 2022": st.column_config.NumberColumn("Result 2022"),
     "Profit margin 2022": st.column_config.NumberColumn("Profit Margin 2022", format="%.2f%%"),
     "Market share 2022": st.column_config.NumberColumn("Market share 2022", format="%.2f%%"),
-    "Income 2021": st.column_config.TextColumn("Income 2021"),
-    "Result 2021": st.column_config.TextColumn("Result 2021"),
+    "Income 2021": st.column_config.NumberColumn("Income 2021"),
+    "Result 2021": st.column_config.NumberColumn("Result 2021"),
     "Profit margin 2021": st.column_config.NumberColumn("Profit Margin 2021", format="%.2f%%"),
     "Market share 2021": st.column_config.NumberColumn("Market share 2021", format="%.2f%%"),
-    "Income 2020": st.column_config.TextColumn("Income 2020"),
-    "Result 2020": st.column_config.TextColumn("Result 2020"),
+    "Income 2020": st.column_config.NumberColumn("Income 2020"),
+    "Result 2020": st.column_config.NumberColumn("Result 2020"),
     "Profit margin 2020": st.column_config.NumberColumn("Profit Margin 2020", format="%.2f%%"),
     "Market share 2020": st.column_config.NumberColumn("Market share 2020", format="%.2f%%"),
     "Market Share Trend 2020-2022": st.column_config.NumberColumn("Market Share Trend 2020-2022", format="%.2f%%"),
@@ -816,6 +812,9 @@ The next graph shows the result in % for each company.
 
 # Filter the DataFrame to exclude the 'SUM' row if present
 results_df = df[df['Organization Number'] != 'SUM'].copy()
+
+# Ensure the column values are strings before applying string operations
+results_df['Result 2022'] = results_df['Result 2022'].astype(str)
 
 # Ensure the results are numeric and fill NaN with zeros if needed
 results_df['Result 2022'] = pd.to_numeric(results_df['Result 2022'].str.replace(' ', '').str.replace(',', '.'), errors='coerce').fillna(0)
@@ -1116,21 +1115,26 @@ if st.button("Check for new data", disabled=button_disabled):
 
 # Overview Section
 st.markdown("---")
-st.markdown("### Company Overview")
 st.markdown("""
-This section provides an overview of the companies including their type, specialization, and services offered.
-Service Type = Service Provider or Software Provider.
-Service Model = Full service, Specialized or Generalist. Full service requires you to be a quite big company.
-Specialization = Pick one subject/specialization, Full service, or Generalist (not big enough for Full service, but you work within several domains). 
-Contact me if think my understanding and classification of your company below is wrong.
+### Company Overview
+
+This section provides a detailed overview of each company's type, specialization, and services offered. Use the table to easily find a company that suits your needs.
+
+- **Service or Software Provider**: Service Provider or Software Provider.
+- **Full Service / Specialization / Generalist**:
+  - **Full Service**: Typically larger companies offering comprehensive services (one stop shop).
+  - **Specialized**: Focuses on a single domain (boutique/experts)
+  - **Generalist**: Covers multiple areas but not as extensive as full service company.
+
+If you believe there is an error in the classification of your company, please contact me.
 """)
 
 # Select relevant columns for the overview and rename them
-overview_columns = ['Company Name', 'Established', 'Type', 'Company type', 'Specialization', 'Website URL']
+overview_columns = ['Company Name', 'Established', 'Type', 'Specialization', 'Website URL']
 rename_columns = {
-    'Type': 'Company Type',
+    'Type': 'Service or Software Provider',
     'Company type': 'Service Model',
-    'Specialization': 'Specialization'
+    'Specialization': 'Specialization / Generalist / Full Service'
 }
 
 # Check for missing columns
@@ -1156,5 +1160,5 @@ else:
     }
 
     # Display the DataFrame using st.data_editor with link column configurations and set use_container_width to True
-    st.data_editor(data=df_overview, column_config=column_config, use_container_width=True)
+    st.data_editor(data=df_overview, column_config=column_config, height=1400, use_container_width=True)
     debug_print("Data Editor Displayed with Link Columns")
