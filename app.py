@@ -603,7 +603,8 @@ with col1:
     st.markdown("""
     #### Total market income
     This bar chart displays the annual total market income for all companies, measured in Norwegian Kroner (NOK). 
-    The data reveal the market's evolution.
+    The data reveal the market's evolution. 
+    
     Data for 2023 will be included when sufficient data is available.
     """)
 
@@ -612,11 +613,11 @@ with col1:
     if include_2023_data:
         years.append('Income 2023')
 
-    # Convert the relevant columns to numeric, coercing errors
+    # Ensure the relevant columns are converted to numeric types
     for year in years:
-        df[year] = pd.to_numeric(df[year].str.replace(' ', '').str.replace(',', '.'), errors='coerce').fillna(0)
+        df[year] = pd.to_numeric(df[year].astype(str).str.replace(',', '').str.replace(' ', ''), errors='coerce')
 
-    # Extract the total incomes for the selected years
+    # Extract the last row for the total incomes for the selected years
     market_growth_data = df[years].sum()
 
     # Creating a DataFrame suitable for plotting
