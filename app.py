@@ -30,7 +30,7 @@ short_bio = """
     Feel free to contact me if you have any questions or requests.
 """
 
-#Split into two columns
+# Split into two columns
 col1, col2 = st.columns([4, 2])
 
 with col1:
@@ -65,9 +65,14 @@ with col2:
     st.header("Olav Østbye")
     st.write("Principal Cloud Security Manager @ O3C")
     st.caption(short_bio)
-    st.link_button("Linkedin", url=linkedin_url)
-    st.link_button("Email", url="mailto:olav@o3c.no")
-    st.link_button("GitHub", url=github_url)
+    # Arrange buttons in a row using columns with smaller width ratios
+    button_col1, button_col2, button_col3 = st.columns([1, 1, 1])
+    with button_col1:
+        st.link_button("Linkedin", url=linkedin_url)
+    with button_col2:
+        st.link_button("Email", url="mailto:olav@o3c.no")
+    with button_col3:
+        st.link_button("GitHub", url=github_url)
 
 st.markdown("---")
 
@@ -120,21 +125,19 @@ def convert_columns_to_float(df):
             debug_print(f"Error processing column '{column}': {e}")
     return df
 
-
-
 def format_financial_and_percentage_columns(df):
     currency_cols = ['Income 2023', 'Result 2023', 'Income 2022', 'Result 2022',
                      'Income 2021', 'Result 2021', 'Income 2020', 'Result 2020']
     percent_cols = ['Market share 2023', 'Market share 2022', 'Market share 2021',
                     'Market share 2020', 'Profit margin 2023', 'Profit margin 2022',
-                    'Profit margin 2021', 'Profit margin 2020', 'Trend 2020-2022']
+                    'Profit margin 2021', 'Profit margin 2020', 'Market Share Trend 2020-2022']
 
     # Format currency columns
     for col in currency_cols:
         if col in df.columns:
             # Convert to numeric and handle NaNs
             df[col] = pd.to_numeric(df[col], errors='coerce')
-            # Ro to one decimal place
+            # Round to one decimal place
             df[col] = df[col].round(1)
 
     # Format percent columns
@@ -165,7 +168,6 @@ def fetch_existing_df():
         st.error(f"Error fetching 'selskapsdata' data: {e}")
         return None
 
-
 def fetch_other_df():
     try:
         # Open the Google Sheet and select the 'other' worksheet
@@ -179,7 +181,6 @@ def fetch_other_df():
         st.error(f"Error fetching 'other' data: {e}")
         return None
 
-
 def sanitize_number(number_str):
     if number_str is not None and isinstance(number_str, str):
         number_str = number_str.strip()
@@ -192,8 +193,6 @@ def sanitize_number(number_str):
         except ValueError:
             return None
     return number_str
-
-
 
 def get_current_values_from_sheet(worksheet, org_number, year):
     try:
@@ -232,7 +231,6 @@ def get_current_values_from_sheet(worksheet, org_number, year):
         debug_print(f"Error fetching current values from sheet for org number {org_number}: {e}")
         return None, None
 
-
 def check_and_update_sheet(worksheet, org_number, year, new_income, new_result, existing_income, existing_result):
     sh = gc.open("stats.xlsx")
     worksheet = sh.sheet1
@@ -258,7 +256,6 @@ def check_and_update_sheet(worksheet, org_number, year, new_income, new_result, 
         update_cell(worksheet, org_number, year, 'Result', new_result)
     else:
         debug_print(f"No update needed for Result for {org_number} for the year {year}")
-
 
 def update_cell(worksheet, org_number, year, field, new_value):
     try:
@@ -288,7 +285,6 @@ def update_cell(worksheet, org_number, year, field, new_value):
     except Exception as e:
         debug_print(f"Error updating cell for org number {org_number} in {year}: {e}")
 
-
 def is_2023_data_available(df):
     # Define the org numbers of the 3 biggest companies
     big_companies = ['982089549', '993856886', '981548280']
@@ -304,7 +300,6 @@ def is_2023_data_available(df):
 
     # Return True if conditions are met, else False
     return big_companies_data_available and total_companies_with_2023_data > 10
-
 
 service_account_info = {
     "type": st.secrets["pygsheets"]["type"],
@@ -336,7 +331,6 @@ try:
 except Exception as e:
     error_message = f"Error while accessing spreadsheet: {e}"
     debug_print(error_message)
-
 
 def get_and_update_last_updated_time():
     # Initialize 'last_updated_time' in st.session_state if it doesn't exist
@@ -370,7 +364,6 @@ def get_and_update_last_updated_time():
     except Exception as e:
         st.error(f"Error handling the last updated time: {e}")
         debug_print(f"Exception: {e}")
-
 
 def update_last_update_time_in_sheet(sheet_name, cell, current_time_str):
     try:
@@ -415,12 +408,11 @@ def is_button_disabled():
 # Check if the button should be disabled
 button_disabled = is_button_disabled()
 
-# If the data difference is less than 2%, dont update
+# If the data difference is less than 2%, don't update
 TOLERANCE_PERCENT = 0.02
 
-
-#check if new data is available in the API and not already in the google sheet
-#first checking against the dataframe to save complexity, compute and time. If the difference is bigger than the tolerance_percent, then check the google sheet and update if necessary.
+# Check if new data is available in the API and not already in the google sheet
+# First checking against the dataframe to save complexity, compute and time. If the difference is bigger than the tolerance_percent, then check the google sheet and update if necessary.
 def update_google_sheet(worksheet, org_number, financial_data, existing_df):
     update_summary = []  # List to store updates for each organization number
 
@@ -472,7 +464,6 @@ def update_google_sheet(worksheet, org_number, financial_data, existing_df):
 
     return update_summary
 
-
 def get_column_letter(column_index):
     """Convert a column index into a column letter."""
     column_letter = ''
@@ -495,38 +486,45 @@ try:
     # Convert all columns that can be converted to floats
     df = convert_columns_to_float(df)
 
-    # format financial and percentage columns
+    # Format financial and percentage columns
     df = format_financial_and_percentage_columns(df)
 
 except Exception as e:
     st.error(f"Error fetching data: {e}")
 
-# column configurations without changing the actual data
+# Function to format numbers with spaces as thousand separators
+def format_with_thousand_separator(value):
+    if pd.notnull(value):
+        return f"{value:,.0f}".replace(",", " ")
+    return value
+
+# Apply the formatting function to the relevant columns
+for col in ['Income 2023', 'Result 2023', 'Income 2022', 'Result 2022', 'Income 2021', 'Result 2021', 'Income 2020', 'Result 2020']:
+    df[col] = df[col].apply(format_with_thousand_separator)
+
+# Column configurations with appropriate formats
 column_configurations = {
-    "Income 2023": st.column_config.NumberColumn("Income 2023", format="%d NOK"),
-    "Result 2023": st.column_config.NumberColumn("Result 2023", format="%d NOK"),
+    "Income 2023": st.column_config.TextColumn("Income 2023"),
+    "Result 2023": st.column_config.TextColumn("Result 2023"),
     "Profit margin 2023": st.column_config.NumberColumn("Profit Margin 2023", format="%.2f%%"),
     "Market share 2023": st.column_config.NumberColumn("Market share 2023", format="%.2f%%"),
-    "Income 2022": st.column_config.NumberColumn("Income 2022", format="%d NOK"),
-    "Result 2022": st.column_config.NumberColumn("Result 2022", format="%d NOK"),
+    "Income 2022": st.column_config.TextColumn("Income 2022"),
+    "Result 2022": st.column_config.TextColumn("Result 2022"),
     "Profit margin 2022": st.column_config.NumberColumn("Profit Margin 2022", format="%.2f%%"),
     "Market share 2022": st.column_config.NumberColumn("Market share 2022", format="%.2f%%"),
-    "Income 2021": st.column_config.NumberColumn("Income 2021", format="%d NOK"),
-    "Result 2021": st.column_config.NumberColumn("Result 2021", format="%d NOK"),
+    "Income 2021": st.column_config.TextColumn("Income 2021"),
+    "Result 2021": st.column_config.TextColumn("Result 2021"),
     "Profit margin 2021": st.column_config.NumberColumn("Profit Margin 2021", format="%.2f%%"),
     "Market share 2021": st.column_config.NumberColumn("Market share 2021", format="%.2f%%"),
-    "Income 2020": st.column_config.NumberColumn("Income 2020", format="%d NOK"),
-    "Result 2020": st.column_config.NumberColumn("Result 2020", format="%d NOK"),
+    "Income 2020": st.column_config.TextColumn("Income 2020"),
+    "Result 2020": st.column_config.TextColumn("Result 2020"),
     "Profit margin 2020": st.column_config.NumberColumn("Profit Margin 2020", format="%.2f%%"),
     "Market share 2020": st.column_config.NumberColumn("Market share 2020", format="%.2f%%"),
-    "Trend 2020-2022": st.column_config.NumberColumn("Trend 2020-2022", format="%.2f%%"),
+    "Market Share Trend 2020-2022": st.column_config.NumberColumn("Market Share Trend 2020-2022", format="%.2f%%"),
 }
 
-# Drop the 'Proff URL' column
-df.drop('Proff URL', axis=1, inplace=True)
-
-# drop the ,00 at the end of the organization number
-df['Organization Number'] = df['Organization Number'].astype(str).str.replace(',00', '', regex=False)
+# Define main_table_columns before using it
+main_table_columns = [col for col in df.columns if col not in ['Type', 'Company type', 'Specialization', 'Proff URL', 'Website URL']]
 
 include_2023_data = is_2023_data_available(df)
 if DEBUG_MODE:
@@ -544,7 +542,10 @@ Interpreting data from a table can sometimes be challenging. For a more intuitiv
 Please note that the data for 2023 is updated as it becomes available.
 """)
 
-st.data_editor(data=df, column_config=column_configurations)
+# Remove the columns you don't want to display
+main_table_columns = [col for col in df.columns if col not in ['Type', 'Company type', 'Specialization', 'Proff URL', 'Website URL']]
+
+st.data_editor(data=df[main_table_columns], column_config=column_configurations)
 
 st.markdown("""
 ### Growth of Specialized Cyber Security Companies Based on Year
@@ -602,8 +603,7 @@ with col1:
     st.markdown("""
     #### Total market income
     This bar chart displays the annual total market income for all companies, measured in Norwegian Kroner (NOK). 
-    The data reveal the market's evolution. 
-    
+    The data reveal the market's evolution.
     Data for 2023 will be included when sufficient data is available.
     """)
 
@@ -612,14 +612,17 @@ with col1:
     if include_2023_data:
         years.append('Income 2023')
 
-    # Extract the last row for the total incomes for the selected years
-    market_growth_data = df[years].iloc[-1]
-    market_growth_data = pd.to_numeric(market_growth_data, errors='coerce').fillna(0)
+    # Convert the relevant columns to numeric, coercing errors
+    for year in years:
+        df[year] = pd.to_numeric(df[year].str.replace(' ', '').str.replace(',', '.'), errors='coerce').fillna(0)
+
+    # Extract the total incomes for the selected years
+    market_growth_data = df[years].sum()
 
     # Creating a DataFrame suitable for plotting
     market_growth_df = pd.DataFrame({
         'Year': years,
-        'Total Income': market_growth_data.values.flatten()
+        'Total Income': market_growth_data.values
     })
 
     # Create the bar chart
@@ -645,10 +648,9 @@ with col2:
     st.markdown("""
     #### Year over Year Percentage Change in Total Market Income
     The percentage change from year to year gives a clearer picture of market trends.
-    As we can see the percentage growth was much higher from 2020-2021 compared to 2021-2022.
-    This can indicate that the market growth is slowing down.
-            
+                
     Data for 2023 will be included when sufficient data is available.
+    
     """)
 
     # Define the years to be included in the analysis
@@ -761,7 +763,7 @@ st.markdown("""
 #### Market Trend per Company
 This horizontal bar chart depicts the changes in market share for each company from 2020 to 2023 (2023 will be included when sufficient data is available).
 """)
-trend_col = 'Trend 2020-2022'
+trend_col = 'Market Share Trend 2020-2022'
 
 if trend_col in df.columns:
     # Convert the column to float and handle the percentages
@@ -815,7 +817,7 @@ The next graph shows the result in % for each company.
 results_df = df[df['Organization Number'] != 'SUM'].copy()
 
 # Ensure the results are numeric and fill NaN with zeros if needed
-results_df['Result 2022'] = pd.to_numeric(results_df['Result 2022'], errors='coerce').fillna(0)
+results_df['Result 2022'] = pd.to_numeric(results_df['Result 2022'].str.replace(' ', '').str.replace(',', '.'), errors='coerce').fillna(0)
 
 # Sort the DataFrame based on 'Result 2022' for better visualization
 results_df.sort_values(by='Result 2022', ascending=False, inplace=True)
@@ -845,7 +847,6 @@ fig_result_2022.update_traces(
 )
 
 st.plotly_chart(fig_result_2022, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
-
 
 st.markdown("""
 #### Profit Margin per Company for 2022
@@ -1111,3 +1112,48 @@ if st.button("Check for new data", disabled=button_disabled):
 
         # Update the 'Last updated' time in the Google Sheet after checking all companies
         update_last_update_time_in_sheet('other', 'B1', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
+# Overview Section
+st.markdown("---")
+st.markdown("### Company Overview")
+st.markdown("""
+This section provides an overview of the companies including their type, specialization, and services offered.
+Service Type = Service Provider or Software Provider.
+Service Model = Full service, Specialized or Generalist. Full service requires you to be a quite big company.
+Specialization = Pick one subject/specialization, Full service, or Generalist (not big enough for Full service, but you work within several domains). 
+Contact me if think my understanding and classification of your company below is wrong.
+""")
+
+# Select relevant columns for the overview and rename them
+overview_columns = ['Company Name', 'Established', 'Type', 'Company type', 'Specialization', 'Website URL']
+rename_columns = {
+    'Type': 'Company Type',
+    'Company type': 'Service Model',
+    'Specialization': 'Specialization'
+}
+
+# Check for missing columns
+missing_columns = [col for col in overview_columns if col not in df.columns]
+debug_print(f"Overview Columns: {overview_columns}")
+debug_print(f"Missing Columns: {missing_columns}")
+
+if missing_columns:
+    st.error(f"One or more overview columns are missing from the dataset: {missing_columns}")
+else:
+    # Select the overview columns and rename them
+    df_overview = df[overview_columns].dropna(subset=['Company Name']).copy()
+    df_overview.rename(columns=rename_columns, inplace=True)
+    debug_print(f"DataFrame Overview Shape: {df_overview.shape}")
+    debug_print(f"DataFrame Overview Columns: {df_overview.columns}")
+
+    # Reset index to start from 1
+    df_overview.index = df_overview.index + 1
+
+    # Column configurations for link columns
+    column_config = {
+        "Website URL": st.column_config.LinkColumn("Website URL")
+    }
+
+    # Display the DataFrame using st.data_editor with link column configurations and set use_container_width to True
+    st.data_editor(data=df_overview, column_config=column_config, use_container_width=True)
+    debug_print("Data Editor Displayed with Link Columns")
