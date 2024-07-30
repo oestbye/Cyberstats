@@ -1,13 +1,14 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import requests
 from datetime import datetime, timedelta
 import pygsheets
 from google.oauth2 import service_account
 import numpy as np
 
-DEBUG_MODE = False
+DEBUG_MODE = True
 
 # Function to print debug statements
 def debug_print(message):
@@ -57,20 +58,27 @@ with col1:
     """)
     st.header("Looking for Cyber Security Consultancy, Services, or Software?")
     st.markdown("""
-        At the bottom of this page, you'll find a comprehensive table listing companies that meet the specified criteria. 
-        This table includes information about the services they offer, helping you to find the right company for your cyber security needs.
-    """)
+        If you are interested in Cloud Security or have Cloud Security challenges you would like to discuss, 
+        please feel free to connect with me on LinkedIn and/or send me an email using the links below my picture. 
+        O3 Cyber (O3C) is a specialized Cloud Security Consultancy Boutique, 
+        dedicated to providing expert solutions tailored to your needs.
 
+        At the bottom of this page, you will also find a comprehensive table listing companies that meet the specified scope. 
+        This table includes detailed information about the services they offer, assisting you in finding the right company for your cyber security needs.
+            """)
 
 linkedin_url = "https://www.linkedin.com/in/oestbye/"
+O3C_link = "https://www.o3c.io"
 github_url = "https://github.com/oestbye/Cyberstats"
 image_url = 'https://iili.io/J1miME7.png'
+O3C_logo = 'https://iili.io/duuPnCx.md.png'
 
 with col2:
     st.image(image_url, caption='', use_column_width=True)
     st.header("Olav Østbye")
-    st.write("Principal Cloud Security Manager @ O3C")
+    st.write("Principal Cloud Security Manager @ O3 Cyber (O3C)")
     st.caption(short_bio)
+
     # Arrange buttons in a row using columns with smaller width ratios
     button_col1, button_col2, button_col3 = st.columns([1, 1, 1])
     with button_col1:
@@ -79,6 +87,8 @@ with col2:
         st.link_button("Email", url="mailto:olav@o3c.no")
     with button_col3:
         st.link_button("GitHub", url=github_url)
+    
+    st.markdown(f'<div style="text-align: center;"><a href="{O3C_link}" target="_blank"><img src="{O3C_logo}" alt="O3C Logo" style="max-width: 75%;"></a>', unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -292,20 +302,41 @@ def update_cell(worksheet, org_number, year, field, new_value):
         debug_print(f"Error updating cell for org number {org_number} in {year}: {e}")
 
 def is_2023_data_available(df):
+    # Clean the 'Organization Number' column
+    df['Organization Number'] = df['Organization Number'].astype(str).str.strip()
+
+    # Debug print the cleaned dataframe
+    debug_print(f"Cleaned dataframe:\n{df}")
+
     # Define the org numbers of the 3 biggest companies
-    big_companies = ['982089549', '993856886', '981548280']
+    big_companies = ['982089549', '993856886', '968504436', '981548280']
+
+    # Debug print the relevant rows for each company
+    for org_number in big_companies:
+        relevant_rows = df[df['Organization Number'] == org_number]
+        debug_print(f"Relevant rows for company {org_number}:\n{relevant_rows}")
+
+        is_data_available = relevant_rows['Income 2023'].notna().any()
+        debug_print(f"Data for company {org_number} available: {is_data_available}")
 
     # Check if the data for these companies for 2023 is available
     big_companies_data_available = all(
-        df[df['Organization Number'].str.replace(' ', '') == org_number]['Income 2023'].notna().any()
+        df[df['Organization Number'] == org_number]['Income 2023'].notna().any()
         for org_number in big_companies
     )
 
     # Count the total number of companies with available 2023 data
     total_companies_with_2023_data = df['Income 2023'].notna().sum()
 
+    # Debug print the total number of companies with available 2023 data
+    debug_print(f"Total companies with 2023 data: {total_companies_with_2023_data}")
+
     # Return True if conditions are met, else False
-    return big_companies_data_available and total_companies_with_2023_data > 10
+    result = big_companies_data_available and total_companies_with_2023_data > 10
+    debug_print(f"Result of data availability check: {result}")
+
+    return result
+
 
 service_account_info = {
     "type": st.secrets["pygsheets"]["type"],
@@ -596,12 +627,11 @@ st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False, 
 col1, col2 = st.columns(2)
 
 with col1:
+    # Total market income section
     st.markdown("""
     #### Total market income
     This bar chart displays the annual total market income for all companies, measured in Norwegian Kroner (NOK). 
     The data reveal the market's evolution. 
-    
-    Data for 2023 will be included when sufficient data is available.
     """)
 
     # Define the years to be included in the analysis
@@ -609,14 +639,17 @@ with col1:
     if include_2023_data:
         years.append('Income 2023')
 
+    # Filter out the 'SUM' row
+    df_no_sum = df[df['Organization Number'] != 'SUM']
+
     # Ensure the relevant columns are converted to numeric types
     for year in years:
-        df[year] = pd.to_numeric(df[year].astype(str).str.replace(',', '').str.replace(' ', ''), errors='coerce')
+        df_no_sum[year] = pd.to_numeric(df_no_sum[year].astype(str).str.replace(',', '').str.replace(' ', ''), errors='coerce')
 
-    # Extract the last row for the total incomes for the selected years
-    market_growth_data = df[years].sum()
+    # Calculate the total incomes for the selected years
+    market_growth_data = df_no_sum[years].sum()
 
-    # Creating a DataFrame suitable for plotting
+    # Create a DataFrame suitable for plotting
     market_growth_df = pd.DataFrame({
         'Year': years,
         'Total Income': market_growth_data.values
@@ -640,14 +673,14 @@ with col1:
 
     st.plotly_chart(fig_market_growth, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
+
 # Yearly Percentage Change in Total Market Income - Vertical Bar Chart
 with col2:
     st.markdown("""
     #### Year over Year Percentage Change in Total Market Income
     The percentage change from year to year gives a clearer picture of market trends.
+    Notably, the data indicates that market growth came to a complete halt in 2023
                 
-    Data for 2023 will be included when sufficient data is available.
-    
     """)
 
     # Define the years to be included in the analysis
@@ -681,10 +714,14 @@ with col2:
         title=None,
     )
 
-       # Update layout to disable zoom
+    # Update layout to disable zoom and add percentage sign
     fig_market_growth_percentage.update_layout(
         xaxis_title="Year Interval",
         yaxis_title="Percentage Change (%)",
+        yaxis=dict(
+            tickformat=',.0f%',  # Format ticks as percentages
+            ticksuffix='%'
+        ),
         showlegend=False,
         autosize=True,
     )
@@ -692,48 +729,68 @@ with col2:
     # Show the figure
     st.plotly_chart(fig_market_growth_percentage, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
+# Explanation text for the sum result graph
+st.markdown("""
+#### Total Market Result for All Companies
+This graph shows the total market result for all companies from 2020 to 2023. By summing the annual results of all companies, we can gauge the overall health of the market.
+The trend indicates a substantial decline in overall market results in recent years, with significant financial losses being evident.
+""")
+
+# Ensure the columns we need are numeric
+for col in ['Result 2020', 'Result 2021', 'Result 2022', 'Result 2023']:
+    df[col] = pd.to_numeric(df[col], errors='coerce')
+
+# Extract the 'SUM' row for results
+sum_row = df[df['Organization Number'] == 'SUM']
+
+# Calculate the sum result for each year using the 'SUM' row and scale to MNOK
+sum_result = sum_row[['Result 2020', 'Result 2021', 'Result 2022', 'Result 2023']].values[0] / 1_000_000  # Convert to millions (MNOK)
+
+# Create a DataFrame suitable for plotting
+sum_result_df = pd.DataFrame({
+    'Year': ['2020', '2021', '2022', '2023'],
+    'Sum Result (MNOK)': sum_result
+})
+
+# Determine the colors based on the values
+colors = ['red' if val < 0 else 'blue' for val in sum_result_df['Sum Result (MNOK)']]
+
+# Create the bar chart for sum result
+fig_sum_result = px.bar(
+    sum_result_df,
+    x='Year',
+    y='Sum Result (MNOK)',
+    title='Total Market Result for All Companies',
+    color=colors,
+    color_discrete_map='identity'  # Ensures the colors are used as specified in the list
+)
+
+# Update layout to match the market trend graph
+fig_sum_result.update_layout(
+    yaxis_title='Sum Result (MNOK)',
+    xaxis_title='Year',
+    xaxis=dict(
+        tickmode='array',
+        tickvals=[2020, 2021, 2022, 2023],
+        ticktext=['2020', '2021', '2022', '2023']
+    ),
+    hovermode='x',
+    dragmode=False,
+    yaxis=dict(
+        tickformat=',.0f',  # Show numbers without decimal places
+        tickprefix='',  # Remove 'mnok' prefix
+        ticksuffix=' MNOK'  # Add ' MNOK' suffix to the tick labels
+    )
+)
+
+# Display the chart
+st.plotly_chart(fig_sum_result, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
 st.markdown("""
 #### Market Share Distribution per year
-The charts below clearly show that Mnemonic holds the largest market share, followed by Netsecurity (Netsecurity and Data equipment merged in 2023) and Orange Cyber Defense.
+The chart(s) below clearly show that Mnemonic still holds the largest market share, followed by Netsecurity (Netsecurity and Data equipment merged in 2023).
 I calculate the market share by dividing each company's income by the total market income.
 """)
-
-# Create two columns for the pie charts
-col1, col2 = st.columns(2)
-
-# Plot Market Share 2022 in the first column
-with col1:
-    market_share_col_2022 = 'Market share 2022'
-    if market_share_col_2022 in df.columns:
-        marketshare_df_2022 = df[df[market_share_col_2022].notna() & (df['Organization Number'] != 'SUM')].copy()
-        marketshare_df_2022[market_share_col_2022] = pd.to_numeric(
-            marketshare_df_2022[market_share_col_2022].astype(str).str.replace('%', ''), errors='coerce') / 100
-        fig_2022 = px.pie(
-            marketshare_df_2022,
-            values=market_share_col_2022,
-            names='Company Name',
-            title='Market Share Distribution 2022'
-        )
-        st.plotly_chart(fig_2022, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
-
-# Plot Market Share 2021 in the second column
-with col2:
-    market_share_col_2021 = 'Market share 2021'
-    if market_share_col_2021 in df.columns:
-        # Filter out the 'SUM' row by checking if the 'Organization Number' column is not 'SUM'
-        marketshare_df_2021 = df[(df[market_share_col_2021].notna()) & (df['Organization Number'] != 'SUM')].copy()
-        marketshare_df_2021[market_share_col_2021] = pd.to_numeric(
-            marketshare_df_2021[market_share_col_2021].astype(str).str.replace('%', ''), errors='coerce') / 100
-        fig_2021 = px.pie(
-            marketshare_df_2021,
-            values=market_share_col_2021,
-            names='Company Name',
-            title='Market Share Distribution 2021'
-        )
-
-        st.plotly_chart(fig_2021, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
-
 
 # Check if 2023 market share data is enough to be displayed
 if include_2023_data:
@@ -755,24 +812,68 @@ else:
     st.markdown("#### Market Share Distribution 2023")
     st.write("The market share distribution for 2023 will be displayed once sufficient data is available.")
 
+with st.expander("Show Market Share Distribution 2022"):
+    col1, col2 = st.columns(2)
 
+    with col1:
+        market_share_col_2022 = 'Market share 2022'
+        if market_share_col_2022 in df.columns:
+            marketshare_df_2022 = df[df[market_share_col_2022].notna() & (df['Organization Number'] != 'SUM')].copy()
+            marketshare_df_2022[market_share_col_2022] = pd.to_numeric(
+                marketshare_df_2022[market_share_col_2022].astype(str).str.replace('%', ''), errors='coerce') / 100
+            fig_2022 = px.pie(
+                marketshare_df_2022,
+                values=market_share_col_2022,
+                names='Company Name',
+                title='Market Share Distribution 2022'
+            )
+            st.plotly_chart(fig_2022, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
+
+with st.expander("Show Market Share Distribution 2021"):
+    col1, col2 = st.columns(2)
+
+    with col2:
+        market_share_col_2021 = 'Market share 2021'
+        if market_share_col_2021 in df.columns:
+            # Filter out the 'SUM' row by checking if the 'Organization Number' column is not 'SUM'
+            marketshare_df_2021 = df[(df[market_share_col_2021].notna()) & (df['Organization Number'] != 'SUM')].copy()
+            marketshare_df_2021[market_share_col_2021] = pd.to_numeric(
+                marketshare_df_2021[market_share_col_2021].astype(str).str.replace('%', ''), errors='coerce') / 100
+            fig_2021 = px.pie(
+                marketshare_df_2021,
+                values=market_share_col_2021,
+                names='Company Name',
+                title='Market Share Distribution 2021'
+            )
+
+            st.plotly_chart(fig_2021, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
+
+
+# Market Trend per Company (2020-2023)
 st.markdown("""
-#### Market Trend per Company
-This horizontal bar chart depicts the changes in market share for each company from 2020 to 2023 (2023 will be included when sufficient data is available).
+#### Market Trend per Company (2020-2023)
+This horizontal bar chart depicts the changes in market share for each company from 2020 to 2023.
 """)
-trend_col = 'Market Share Trend 2020-2022'
+trend_col = 'Market Share Trend 2020-2023'
 
 if trend_col in df.columns:
     # Convert the column to float and handle the percentages
     df[trend_col] = (
         df[trend_col].astype(str)
         .str.replace(',', '.')
+        .str.replace('−', '-')  # Standardize negative signs
         .str.rstrip('%')
-        .astype(float) / 100
+        .astype(float)
     )
 
+    # Exclude "Data Equipment AS" from the DataFrame
+    trend_df = df[df['Company Name'] != 'Data Equipment AS']
+
     # Sort the dataframe by the trend column
-    trend_df = df.sort_values(by=trend_col, ascending=False)
+    trend_df = trend_df.sort_values(by=trend_col, ascending=False)
+
+    # Determine the colors based on the values
+    colors = ['red' if val < 0 else 'blue' for val in trend_df[trend_col]]
 
     # Create the figure with an appropriate size
     fig_trend = px.bar(
@@ -780,190 +881,125 @@ if trend_col in df.columns:
         x='Company Name',
         y=trend_col,
         title=None,
-        height=600 
+        height=600,
+        color=colors,
+        color_discrete_map='identity'  # Ensures the colors are used as specified in the list
     )
 
     # Update layout to improve visibility of small changes
     fig_trend.update_layout(
         yaxis=dict(
             type='linear',
-            title='Change in Market Share',
-            tickformat='.2%',  # Format ticks as percentages with two decimal places
-            range=[min(df[trend_col]), max(df[trend_col])]  # Adjust the range to focus on the data
+            title='Change in Market Share (%)',
+            tickformat='.0%',  # Format ticks as percentages without decimal places
+            range=[min(trend_df[trend_col]), max(trend_df[trend_col])]  # Adjust the range to focus on the data
         ),
         xaxis_title="Company Name",
         hovermode='x',
         dragmode=False
     )
 
-    # Add hover data for precise values
-    fig_trend.update_traces(
-        hovertemplate='%{x}: %{y:.2%}<extra></extra>',
-        textposition='outside'
-    )
-
+    # Display the chart
     st.plotly_chart(fig_trend, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
+# Result per company for 2023 in NOK
 st.markdown("""
-#### Result per company for 2022 in NOK
-This graph shows the result for each company in NOK for 2022.
-The next graph shows the result in % for each company. 
+#### Result per company for 2023 in NOK
+This graph shows the result for each company in NOK for 2023.
 """)
 
-# Filter the DataFrame to exclude the 'SUM' row if present
-results_df = df[df['Organization Number'] != 'SUM'].copy()
-
-# Ensure the column values are strings before applying string operations
-results_df['Result 2022'] = results_df['Result 2022'].astype(str)
+# Filter the DataFrame to exclude the 'SUM' row and where 'Result 2023' is not NaN
+results_df_2023 = df[df['Organization Number'] != 'SUM'][df['Result 2023'].notna()]
 
 # Ensure the results are numeric and fill NaN with zeros if needed
-results_df['Result 2022'] = pd.to_numeric(results_df['Result 2022'].str.replace(' ', '').str.replace(',', '.'), errors='coerce').fillna(0)
+results_df_2023['Result 2023'] = pd.to_numeric(results_df_2023['Result 2023'], errors='coerce').fillna(0)
 
-# Sort the DataFrame based on 'Result 2022' for better visualization
-results_df.sort_values(by='Result 2022', ascending=False, inplace=True)
+# Sort the DataFrame based on 'Result 2023' for better visualization
+results_df_2023.sort_values(by='Result 2023', ascending=False, inplace=True)
 
-# Create the figure with Plotly Express for a vertical bar chart without text on bars
-fig_result_2022 = px.bar(
-    results_df, 
+# Determine the colors based on the values
+colors_2023 = ['red' if val < 0 else 'blue' for val in results_df_2023['Result 2023']]
+
+# Create the figure with Plotly Express for a vertical bar chart
+fig_result_2023 = px.bar(
+    results_df_2023, 
     x='Company Name', 
-    y='Result 2022',
-    title=None, 
-    height=600
+    y='Result 2023', 
+    height=600,
+    title='Company Results for 2023 in NOK',
+    color=colors_2023,
+    color_discrete_map='identity'  # Ensures the colors are used as specified in the list
 )
 
 # Update layout to match the market trend graph
-fig_result_2022.update_layout(
+fig_result_2023.update_layout(
     yaxis_title='Result (NOK)',
     xaxis_title='Company',
     xaxis={'categoryorder':'total descending'},
     hovermode='x',
-    dragmode=False,
+    dragmode=False
 )
 
 # Add hover data for precise values
-fig_result_2022.update_traces(
+fig_result_2023.update_traces(
     hovertemplate='%{x}: %{y:.2f} NOK<extra></extra>',
     textposition='none'
 )
 
-st.plotly_chart(fig_result_2022, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
+# Display the figure in the Streamlit app
+st.plotly_chart(fig_result_2023, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
-st.markdown("""
-#### Profit Margin per Company for 2022
-The following bar chart illustrates the profit margin for each company in 2022.
-""")
-
-# Define the profit margin column for 2022
-profit_margin_col = 'Profit margin 2022'
-
-# Convert to string and replace ',' with '.', and then convert to float
-df[profit_margin_col] = (
-    df[profit_margin_col]
-    .astype(str)  # Convert to string to perform string operations
-    .str.replace(',', '.')  # Replace commas with dots for decimal conversion
-    .str.rstrip('%')  # Remove the percentage sign
-    .astype(float)  # Convert the string to a float
-)
-
-# Convert percentages to decimal form by dividing by 100
-df[profit_margin_col] = df[profit_margin_col] / 100
-
-# Remove rows where the profit margin is NaN or zero
-profit_margin_df = df[df[profit_margin_col].notna() & (df[profit_margin_col] != 0)]
-
-# Sort the DataFrame based on 'Profit margin 2022' for better visualization
-profit_margin_df = profit_margin_df.sort_values(by=profit_margin_col, ascending=False)
-
-
-# Create the figure with Plotly Express for a vertical bar chart
-fig_profit_margin = px.bar(
-    profit_margin_df,
-    x='Company Name',
-    y=profit_margin_col,
-    title=None,
-    height=600
-)
-
-# Update layout to match the market trend graph
-fig_profit_margin.update_layout(
-    yaxis_title='Profit Margin (%)',
-    xaxis_title='Company',
-    yaxis=dict(
-        tickformat='.0%',  # Format ticks without decimals
-        range=[-1, max(df[profit_margin_col])*1.2]  # Extend the range to 120% of the max value for better readability
-    ),
-    hovermode='x',
-    dragmode=False,
-)
-
-# Calculate the percentage values for the text, ensuring no decimals and multiplying by 100
-profit_margin_text = (profit_margin_df[profit_margin_col] * 100).round().astype(int).astype(str) + '%'
-
-# Update traces to display the text within the bars, ensuring it's at the start (bottom)
-fig_profit_margin.update_traces(
-    text=profit_margin_text,  # Set the calculated text values
-    textposition='inside',  # Position the text inside the bars
-    insidetextanchor='start',  # Anchor the text to the start of the bar
-    textfont=dict(
-        size=12,  # Set a fixed size for the text
-        color='black'  # Set the text color to white for visibility
-    )
-)
-
-# Display the updated figure in the Streamlit app
-st.plotly_chart(fig_profit_margin, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
-
-
-# If enough data is available, create and display the graphs for 2023
-if include_2023_data:
+with st.expander("Show Result per company for 2022 in NOK"):
     st.markdown("""
-    #### Result per company for 2023 in NOK
-    This graph shows the result for each company in NOK for 2023.
+    #### Result per company for 2022 in NOK
+    This graph shows the result for each company in NOK for 2022.
     """)
     
-    # Filter the DataFrame to exclude the 'SUM' row and where 'Result 2023' is not NaN
-    results_df_2023 = df[df['Organization Number'] != 'SUM'][df['Result 2023'].notna()]
+    # Filter the DataFrame to exclude the 'SUM' row if present
+    results_df = df[df['Organization Number'] != 'SUM'].copy()
+
+    # Ensure the column values are strings before applying string operations
+    results_df['Result 2022'] = results_df['Result 2022'].astype(str)
 
     # Ensure the results are numeric and fill NaN with zeros if needed
-    results_df_2023['Result 2023'] = pd.to_numeric(results_df_2023['Result 2023'], errors='coerce').fillna(0)
+    results_df['Result 2022'] = pd.to_numeric(results_df['Result 2022'].str.replace(' ', '').str.replace(',', '.'), errors='coerce').fillna(0)
 
-    # Sort the DataFrame based on 'Result 2023' for better visualization
-    results_df_2023.sort_values(by='Result 2023', ascending=False, inplace=True)
+    # Sort the DataFrame based on 'Result 2022' for better visualization
+    results_df.sort_values(by='Result 2022', ascending=False, inplace=True)
+
+    # Determine the colors based on the values
+    colors_2022 = ['red' if val < 0 else 'blue' for val in results_df['Result 2022']]
 
     # Create the figure with Plotly Express for a vertical bar chart
-    fig_result_2023 = px.bar(
-        results_df_2023, 
+    fig_result_2022 = px.bar(
+        results_df, 
         x='Company Name', 
-        y='Result 2023', 
+        y='Result 2022',
+        title=None, 
         height=600,
-        title='Company Results for 2023 in NOK'
+        color=colors_2022,
+        color_discrete_map='identity'  # Ensures the colors are used as specified in the list
     )
 
     # Update layout to match the market trend graph
-    fig_result_2023.update_layout(
+    fig_result_2022.update_layout(
         yaxis_title='Result (NOK)',
         xaxis_title='Company',
         xaxis={'categoryorder':'total descending'},
         hovermode='x',
-        dragmode=False
+        dragmode=False,
     )
 
     # Add hover data for precise values
-    fig_result_2023.update_traces(
+    fig_result_2022.update_traces(
         hovertemplate='%{x}: %{y:.2f} NOK<extra></extra>',
         textposition='none'
     )
 
-    # Display the figure in the Streamlit app
-    st.plotly_chart(fig_result_2023, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
+    st.plotly_chart(fig_result_2022, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
-else:
-    st.markdown("#### Result per company for 2023 in NOK")
-    st.write("The graph illustrating the Result per company for 2023 in NOK will be displayed once sufficient data is available.")
-
-
+# Profit Margin per Company for 2023
 if include_2023_data:
-    # Profit Margin per Company for 2023
     st.markdown("""
     #### Profit Margin per Company for 2023
     The following bar chart illustrates the profit margin for each company in 2023. Higher values indicate a higher percentage of revenue that has turned into profit.
@@ -984,32 +1020,86 @@ if include_2023_data:
     # Convert percentages to decimal form by dividing by 100
     profit_margin_df_2023['Profit margin 2023'] /= 100
 
-    # Create a horizontal bar chart for profit margin per company in 2023 with the bars going from left to right
-    fig_profit_margin_2023 = px.bar(
-        profit_margin_df_2023,
-        x='Profit margin 2023',
-        y='Company Name',
-        orientation='h',  # 'h' for horizontal bars
-        title='Profit Margin per Company for 2023',
-        height=600,  # Adjust height based on the number of companies
+    # Separate the data into positive and negative profit margins
+    positive_profit_margin_df = profit_margin_df_2023[profit_margin_df_2023['Profit margin 2023'] >= 0].sort_values(by='Profit margin 2023', ascending=False)
+    negative_profit_margin_df = profit_margin_df_2023[profit_margin_df_2023['Profit margin 2023'] < 0].sort_values(by='Profit margin 2023', ascending=False)
+
+    # Determine the colors based on the values
+    positive_colors = ['blue' for _ in positive_profit_margin_df['Profit margin 2023']]
+    negative_colors = ['red' for _ in negative_profit_margin_df['Profit margin 2023']]
+
+    # Create the figure for positive profit margins
+    fig_positive_profit_margin = px.bar(
+        positive_profit_margin_df,
+        x='Company Name',
+        y='Profit margin 2023',
+        height=600,
+        color=positive_colors,
+        color_discrete_map='identity'  # Ensures the colors are used as specified in the list
     )
+
+    # Create the figure for negative profit margins
+    fig_negative_profit_margin = px.bar(
+        negative_profit_margin_df,
+        x='Company Name',
+        y='Profit margin 2023',
+        height=600,
+        color=negative_colors,
+        color_discrete_map='identity'  # Ensures the colors are used as specified in the list
+    )
+
+    # Combine both figures into one
+    fig_combined = go.Figure(data=fig_positive_profit_margin.data + fig_negative_profit_margin.data)
 
     # Update layout to match the market trend graph
-    fig_profit_margin_2023.update_layout(
-        xaxis_title='Profit Margin (%)',
-        xaxis=dict(tickformat='.2%'),  # Format ticks as percentages with two decimal places
-        yaxis_title='Company Name',
-        hovermode='y',  # Change hover mode to y-axis for horizontal chart
-        dragmode=False
+    fig_combined.update_layout(
+        yaxis_title='Profit Margin (%)',
+        xaxis_title='Company',
+        yaxis=dict(
+            tickformat='.0%',  # Format ticks as percentages without decimal places
+            range=[-1, 1]  # Extend the range to focus on the data
+        ),
+        hovermode='x',
+        dragmode=False,
     )
 
-    # Add hover data for precise values
-    fig_profit_margin_2023.update_traces(
-        hovertemplate='%{y}: %{x:.2%}<extra></extra>',  # Format hover text as percentages
+    # Calculate the percentage values for the text, ensuring no decimals and multiplying by 100
+    positive_profit_margin_text = (positive_profit_margin_df['Profit margin 2023'] * 100).round().astype(int).astype(str) + '%'
+    negative_profit_margin_text = (negative_profit_margin_df['Profit margin 2023'] * 100).round().astype(int).astype(str) + '%'
+
+    # Add debug prints to compare the values
+    for i, (index, row) in enumerate(positive_profit_margin_df.iterrows()):
+        label = positive_profit_margin_text.iloc[i]
+        debug_print(f"Positive Profit Margin for {row['Company Name']}: {row['Profit margin 2023'] * 100}% (Label: {label})")
+    for i, (index, row) in enumerate(negative_profit_margin_df.iterrows()):
+        label = negative_profit_margin_text.iloc[i]
+        debug_print(f"Negative Profit Margin for {row['Company Name']}: {row['Profit margin 2023'] * 100}% (Label: {label})")
+
+    # Update traces to display the text within the bars, ensuring it's at the start (bottom) for positive and end (top) for negative
+    fig_combined.update_traces(
+        text=positive_profit_margin_text,  # Set the calculated text values
+        textposition='inside',  # Position the text inside the bars
+        insidetextanchor='start',  # Anchor the text to the start of the bar
+        textfont=dict(
+            size=12,  # Set a fixed size for the text
+            color='white'  # Set the text color to white for visibility
+        ),
+        selector=dict(marker_color='blue')  # Apply to positive bars only
     )
 
-    # Display the figure in the Streamlit app
-    st.plotly_chart(fig_profit_margin_2023, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
+    fig_combined.update_traces(
+        text=negative_profit_margin_text,  # Set the calculated text values
+        textposition='inside',  # Position the text inside the bars
+        insidetextanchor='start',  # Anchor the text to the start of the bar
+        textfont=dict(
+            size=12,  # Set a fixed size for the text
+            color='white'  # Set the text color to white for visibility
+        ),
+        selector=dict(marker_color='red')  # Apply to negative bars only
+    )
+
+    # Display the updated figure in the Streamlit app
+    st.plotly_chart(fig_combined, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
 else:
     # Display a message if not enough data is available for 2023
@@ -1017,6 +1107,108 @@ else:
     #### Profit Margin per Company for 2023
     The graph illustrating the profit margin for each company in 2023 will be displayed once sufficient data is available.
     """)
+
+with st.expander("Show Profit Margin per Company for 2022"):
+    st.markdown("""
+    #### Profit Margin per Company for 2022
+    The following bar chart illustrates the profit margin for each company in 2022.
+    """)
+    
+    # Define the profit margin column for 2022
+    profit_margin_col = 'Profit margin 2022'
+
+    # Convert to string and replace ',' with '.', and then convert to float
+    df[profit_margin_col] = (
+        df[profit_margin_col]
+        .astype(str)  # Convert to string to perform string operations
+        .str.replace(',', '.')  # Replace commas with dots for decimal conversion
+        .str.rstrip('%')  # Remove the percentage sign
+        .astype(float)  # Convert the string to a float
+    )
+
+    # Convert percentages to decimal form by dividing by 100
+    df[profit_margin_col] = df[profit_margin_col] / 100
+
+    # Separate the data into positive and negative profit margins
+    positive_profit_margin_df = df[df[profit_margin_col] >= 0].sort_values(by=profit_margin_col, ascending=False)
+    negative_profit_margin_df = df[df[profit_margin_col] < 0].sort_values(by=profit_margin_col, ascending=False)
+
+    # Determine the colors based on the values
+    positive_colors = ['blue' for _ in positive_profit_margin_df[profit_margin_col]]
+    negative_colors = ['red' for _ in negative_profit_margin_df[profit_margin_col]]
+
+    # Create the figure for positive profit margins
+    fig_positive_profit_margin = px.bar(
+        positive_profit_margin_df,
+        x='Company Name',
+        y=profit_margin_col,
+        height=600,
+        color=positive_colors,
+        color_discrete_map='identity'  # Ensures the colors are used as specified in the list
+    )
+
+    # Create the figure for negative profit margins
+    fig_negative_profit_margin = px.bar(
+        negative_profit_margin_df,
+        x='Company Name',
+        y=profit_margin_col,
+        height=600,
+        color=negative_colors,
+        color_discrete_map='identity'  # Ensures the colors are used as specified in the list
+    )
+
+    # Combine both figures into one
+    fig_combined = go.Figure(data=fig_positive_profit_margin.data + fig_negative_profit_margin.data)
+
+    # Update layout to match the market trend graph
+    fig_combined.update_layout(
+        yaxis_title='Profit Margin (%)',
+        xaxis_title='Company',
+        yaxis=dict(
+            tickformat='.0%',  # Format ticks as percentages without decimal places
+            range=[-1, 1]  # Extend the range to focus on the data
+        ),
+        hovermode='x',
+        dragmode=False,
+    )
+
+    # Calculate the percentage values for the text, ensuring no decimals and multiplying by 100
+    positive_profit_margin_text = (positive_profit_margin_df[profit_margin_col] * 100).round().astype(int).astype(str) + '%'
+    negative_profit_margin_text = (negative_profit_margin_df[profit_margin_col] * 100).round().astype(int).astype(str) + '%'
+
+    # Add debug prints to compare the values
+    for i, (index, row) in enumerate(positive_profit_margin_df.iterrows()):
+        label = positive_profit_margin_text.iloc[i]
+        debug_print(f"Positive Profit Margin for {row['Company Name']}: {row[profit_margin_col] * 100}% (Label: {label})")
+    for i, (index, row) in enumerate(negative_profit_margin_df.iterrows()):
+        label = negative_profit_margin_text.iloc[i]
+        debug_print(f"Negative Profit Margin for {row['Company Name']}: {row[profit_margin_col] * 100}% (Label: {label})")
+
+    # Update traces to display the text within the bars, ensuring it's at the start (bottom) for positive and end (top) for negative
+    fig_combined.update_traces(
+        text=positive_profit_margin_text,  # Set the calculated text values
+        textposition='inside',  # Position the text inside the bars
+        insidetextanchor='start',  # Anchor the text to the start of the bar
+        textfont=dict(
+            size=12,  # Set a fixed size for the text
+            color='white'  # Set the text color to white for visibility
+        ),
+        selector=dict(marker_color='blue')  # Apply to positive bars only
+    )
+
+    fig_combined.update_traces(
+        text=negative_profit_margin_text,  # Set the calculated text values
+        textposition='inside',  # Position the text inside the bars
+        insidetextanchor='start',  # Anchor the text to the start of the bar
+        textfont=dict(
+            size=12,  # Set a fixed size for the text
+            color='white'  # Set the text color to white for visibility
+        ),
+        selector=dict(marker_color='red')  # Apply to negative bars only
+    )
+
+    # Display the updated figure in the Streamlit app
+    st.plotly_chart(fig_combined, use_container_width=True, config={"displayModeBar": False, "staticPlot": True})
 
 if 'last_updated_time' not in st.session_state:
     get_and_update_last_updated_time()
@@ -1118,7 +1310,7 @@ st.markdown("---")
 st.markdown("""
 ### Company Overview
 
-This section provides a detailed overview of each company's type, specialization, and services offered. Use the table to easily find a company that suits your needs.
+This section provides a detailed overview of each company's type, specialization, and services offered. Use the table to easily find a cyber security company that suits your needs.
 
 - **Service or Software Provider**: Service Provider or Software Provider.
 - **Full Service / Specialization / Generalist**:
