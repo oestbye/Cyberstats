@@ -788,7 +788,7 @@ st.plotly_chart(fig_sum_result, use_container_width=True, config={"displayModeBa
 
 st.markdown("""
 #### Market Share Distribution per year
-The chart(s) below clearly show that Mnemonic still holds the largest market share, followed by Netsecurity (Netsecurity and Data equipment merged in 2023).
+The chart(s) below clearly show that Mnemonic still holds the largest market share, followed by Netsecurity (Netsecurity and Data Equipment merged in 2023).
 I calculate the market share by dividing each company's income by the total market income.
 """)
 
@@ -853,6 +853,7 @@ with st.expander("Show Market Share Distribution 2021"):
 st.markdown("""
 #### Market Trend per Company (2020-2023)
 This horizontal bar chart depicts the changes in market share for each company from 2020 to 2023.
+Please note that Netsecurity and Data Equipment merged in 2023, significantly increasing Netsecurity's market share and positively impacting its market trend.
 """)
 trend_col = 'Market Share Trend 2020-2023'
 
@@ -1002,7 +1003,7 @@ with st.expander("Show Result per company for 2022 in NOK"):
 if include_2023_data:
     st.markdown("""
     #### Profit Margin per Company for 2023
-    The following bar chart illustrates the profit margin for each company in 2023. Higher values indicate a higher percentage of revenue that has turned into profit.
+    The following bar chart illustrates the profit margin for each company in 2023.
     """)
 
     # Filter the DataFrame to exclude the 'SUM' row and where 'Profit margin 2023' is not NaN
