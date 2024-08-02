@@ -678,9 +678,9 @@ with col1:
 with col2:
     st.markdown("""
     #### Year over Year Percentage Change in Total Market Income
-    The percentage change from year to year gives a clearer picture of market trends.
-    Notably, the data indicates that market growth came to a complete halt in 2023
-                
+    The percentage change from year to year shows market trends. 
+    In 2020-2021, market income increased by nearly 20%, followed by another 18% in 2021-2022. 
+    However, growth slowed to around 8% in 2022-2023, indicating a potential market slowdown.
     """)
 
     # Define the years to be included in the analysis
@@ -733,7 +733,7 @@ with col2:
 st.markdown("""
 #### Total Market Result for All Companies
 This graph shows the total market result for all companies from 2020 to 2023. By summing the annual results of all companies, we can gauge the overall health of the market.
-The trend indicates a substantial decline in overall market results in recent years, with significant financial losses being evident.
+The trend indicates a substantial decline in overall market results in recent years, with financial losses being evident.
 """)
 
 # Ensure the columns we need are numeric
